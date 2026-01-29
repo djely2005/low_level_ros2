@@ -111,7 +111,7 @@ The micro-controller is also use to send the PWM to the propulsion motor. The [c
 
 **AVOID TO USE 1 and -1 as value, it will decrease the voltage of the RPi5 and shut it off**. To fix this problem we'll need to add a second battery (one for the motors and the other for the RPi5 and other stuffs).
 
-The [stm32_node](./bolide_stm32/bolide_stm32/stm32_node.py) receive the PWM value and will send it to the motor by the D9 pin (if you want to check the voltage value). The PWM value will after be read by the ESC that will send it to the motor. If you think that the ESC is not working correctly please use the [esc_setup.py](TODO file code) code to set it up and read the md file to follow correctly the instructions. TODO
+The [stm32_node](./bolide_stm32/bolide_stm32/stm32_node.py) receive the PWM value and will send it to the motor by the D9 pin (if you want to check the voltage value). The PWM value will after be read by the ESC that will send it to the motor. If you think that the ESC is not working correctly please use the [esc_setup.py] code to set it up and read the md file to follow correctly the instructions.
 
 When the ESC is set-up you will need to find MINSPEED, MAXSPEED, MINSPEEDFORWARD, MAXSPEEDFORWARD. Since there is two cars, maybe this value will be different for both of them ! So these values are parameters easy to change on launch. Maybe a better solution exists.
 
