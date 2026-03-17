@@ -122,9 +122,9 @@ namespace stm32_bridge
 
       sensors_init();
 
-      // Timer for 200Hz loop
+      // Timer for 12hz I chose this to be the same as the LiDar
       timer_ = this->create_wall_timer(
-          std::chrono::milliseconds(5), std::bind(&Stm32Node::receiveSensorData, this));
+          std::chrono::milliseconds(1/12), std::bind(&Stm32Node::receiveSensorData, this));
     }
 
     ~Stm32Node()
