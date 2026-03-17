@@ -31,7 +31,7 @@ def generate_launch_description():
             output='screen',
             respawn=True,
             parameters=[
-                {'debug': True}
+                {'debug': False}
             ]
         ),
         Node(
