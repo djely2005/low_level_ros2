@@ -17,7 +17,7 @@
 #include "bolide_interfaces/msg/fork_speed.hpp"
 #include "bolide_interfaces/msg/multiple_range.hpp"
 using std::placeholders::_1;
-// Maybe add Header to MultipleRange interface later 
+// Maybe add Header to MultipleRange interface later
 namespace stm32_bridge
 {
   class Stm32Node : public rclcpp::Node
@@ -111,7 +111,7 @@ namespace stm32_bridge
       yaw = 0.0f;
       acc_x = 0.0f;
       yaw_rate = 0.0f;
-      tx_buffer = std::vector<uint8_t>(8, 0);
+      tx_buffer = std::vector<uint8_t>(20, 0);
       rx_buffer.resize(20, 0);
 
       // IMU covariances
@@ -150,8 +150,9 @@ namespace stm32_bridge
       command.push_back((crc >> 8) & 0xFF);
       command.push_back(crc & 0xFF);
 
+      // CHANGE THIS: Match the 20-byte rx_buffer length
       tx_buffer = command;
-      tx_buffer.resize(8, 0);
+      tx_buffer.resize(20, 0);
     }
 
     static uint32_t crc32mpeg2(const uint8_t *data, size_t length, uint32_t crc = 0xFFFFFFFF)
