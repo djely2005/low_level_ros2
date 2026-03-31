@@ -25,7 +25,7 @@ def generate_launch_description():
             respawn=True
         ),
         Node(
-            package='stm32',
+            package='bolide_stm32',
             executable='stm32_node',
             name='stm32_node',
             output='screen',
@@ -52,9 +52,9 @@ def generate_launch_description():
             respawn=True
         ),
         Node(
-            package='bolide_teleop',
-            executable='teleop_keyboard',
-            name='teleop_keyboard',
+            package='ifgm_dwa',
+            executable='ifgm',
+            name='ifgm',
             output='screen',
             respawn=True
         ),

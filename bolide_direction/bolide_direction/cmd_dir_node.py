@@ -67,7 +67,7 @@ class CommandDirection(Node):
         # Protocol version
         self.PROTOCOL_VERSION = 1.0  # See which protocol version is used in the Dynamixel
 
-        # Default setting
+        # Default setting   
         self.DXL_ID = 1
         self.BAUDRATE = 115200
         self.DEVICENAME = '/dev/ttyU2D2'
