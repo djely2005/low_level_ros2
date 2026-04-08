@@ -31,11 +31,11 @@ def generate_launch_description():
             output='screen',
             respawn=True,
             parameters=[
-                {'debug': True}
+                {'debug': False}
             ]
         ),
         Node(
-            package='bolide_stm32',
+            package='stm32',
             executable='cmd_vel_node',
             name='cmd_vel_node',
             output='screen',
@@ -45,17 +45,13 @@ def generate_launch_description():
             respawn=True
         ),
         Node(
-            package='bolide_direction',
+            package='direction',
             executable='cmd_dir_node',
             name='cmd_dir_node',
             output='screen',
-            respawn=True
-        ),
-        Node(
-            package='bolide_teleop',
-            executable='teleop_keyboard',
-            name='teleop_keyboard',
-            output='screen',
-            respawn=True
+            respawn=True,
+            parameters=[
+                {'debug': False}
+            ]
         ),
     ])
