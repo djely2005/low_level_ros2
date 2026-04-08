@@ -49,7 +49,7 @@ static constexpr double CMD_DEADBAND = 0.01;
 using namespace std::chrono_literals;
 
 // ── Hardware Mapping Constants ──────────────────────────────────────────────
-// Based on your tests: 
+// Based on your tests:
 // Forward: 1400 (slow) to 1300 (fast)
 // Reverse: 1600 (slow) to 1800 (fast)
 // Neutral: 1500
@@ -69,7 +69,7 @@ public:
         this->declare_parameter("safety_timeout_ms", 200);
 
         stm32_pub_ = this->create_publisher<std_msgs::msg::Int16>("/stm32_data", 10);
-        
+
         sub_ = this->create_subscription<std_msgs::msg::Float32>(
             "/cmd_vel", 10,
             std::bind(&CommandSpeedNode::cmd_callback, this, std::placeholders::_1));
@@ -87,22 +87,25 @@ private:
     {
         std::lock_guard<std::mutex> lock(mutex_);
         timer_safety_->cancel();
-        
+
         float cmd = std::clamp(msg->data, -1.0f, 1.0f);
-        
-        if (cmd > 0.01f) {
+        // Inside cmd_callback
+        if (cmd > 0.01f)
+        {
             // FORWARD logic: maps [0, 1] to [1400ns, 1300ns]
             // Note: As speed increases, ratio decreases
             double ratio = RATIO_1400 + (double)cmd * (RATIO_1300 - RATIO_1400);
             publish_pulse(ratio);
-        } 
-        else if (cmd < -0.01f) {
+        }
+        else if (cmd < -0.01f)
+        {
             // REVERSE logic: maps [0, 1] to [1600ns, 1800ns]
             double magnitude = std::abs((double)cmd);
             double ratio = RATIO_1600 + magnitude * (RATIO_1800 - RATIO_1600);
             publish_pulse(ratio);
-        } 
-        else {
+        }
+        else
+        {
             publish_pulse(RATIO_1500);
         }
 
@@ -118,12 +121,13 @@ private:
 
     void publish_pulse(double ratio)
     {
-        if (!ready_) return;
+        if (!ready_)
+            return;
 
         auto msg = std_msgs::msg::Int16();
         // Calculate raw nanoseconds
         double ns = ratio * DUTY_TO_NS * ESC_PERIOD_NS;
-        
+
         // Final safety clamp to prevent the "plummet" (out-of-range signals)
         msg.data = static_cast<int16_t>(std::clamp(ns, 1250.0, 1850.0));
 
@@ -142,9 +146,12 @@ int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<CommandSpeedNode>();
-    try {
+    try
+    {
         rclcpp::spin(node);
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         RCLCPP_FATAL(node->get_logger(), "Crash: %s", e.what());
     }
     rclcpp::shutdown();
