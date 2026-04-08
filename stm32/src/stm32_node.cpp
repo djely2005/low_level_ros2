@@ -144,11 +144,6 @@ private:
   // ── Subscription callback ──────────────────────────────────────────────────
   void get_command(const std_msgs::msg::Int16::SharedPtr msg)
   {
-    // Matches Python exactly:
-    //   command = [high_byte, low_byte]
-    //   crc = crc32mpeg2(command)          ← CRC over 2 bytes only
-    //   command += [crc bytes]             ← 6 bytes total
-    //   tx_buffer = command + [0]*2        ← 8 bytes total
     uint16_t val = static_cast<uint16_t>(msg->data);
     std::vector<uint8_t> command = {
       static_cast<uint8_t>((val >> 8) & 0xFF),

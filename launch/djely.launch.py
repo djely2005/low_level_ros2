@@ -25,13 +25,13 @@ def generate_launch_description():
             respawn=True
         ),
         Node(
-            package='stm32',
+            package='bolide_stm32',
             executable='stm32_node',
             name='stm32_node',
             output='screen',
             respawn=True,
             parameters=[
-                {'debug': True}
+                {'debug': False}
             ]
         ),
         Node(
@@ -51,7 +51,7 @@ def generate_launch_description():
             output='screen',
             respawn=True,
             parameters=[
-                {'debug': True}
+                {'debug': False}
             ]
         ),
     ])

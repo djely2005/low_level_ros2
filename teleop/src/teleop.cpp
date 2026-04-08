@@ -35,7 +35,7 @@ char getch() {
 class SmoothTeleopNode : public rclcpp::Node {
 public:
     SmoothTeleopNode() : Node("teleop") {
-        this->declare_parameter("accel_rate", 0.05);
+        this->declare_parameter("accel_rate", 0.01);
         this->declare_parameter("decay_rate", 0.02);
         this->declare_parameter("steer_rate", 0.10);
 
