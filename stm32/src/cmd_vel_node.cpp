@@ -56,7 +56,7 @@ using namespace std::chrono_literals;
 
 // Math: Ratio = ns / (DUTY_TO_NS * ESC_PERIOD_NS)
 static constexpr double RATIO_1300 = 6.93;
-static constexpr double RATIO_1400 = 7.46;
+static constexpr double RATIO_1400 = 7.3; // 7.46;
 static constexpr double RATIO_1500 = 8.00;
 static constexpr double RATIO_1600 = 8.53;
 static constexpr double RATIO_1800 = 9.59;

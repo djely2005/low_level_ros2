@@ -77,7 +77,7 @@ public:
     //   SYMLINK+="ttyU2D2", MODE="0777"
 
     DXL_ID_           = DXL_ID;
-    MAX_STEERING_DEG_ = 15.5;
+    MAX_STEERING_DEG_ = 15.5; // 14.8
 
     portHandler_   = std::unique_ptr<dynamixel::PortHandler>(
       dynamixel::PortHandler::getPortHandler(DEVICENAME.c_str()));
@@ -131,7 +131,7 @@ private:
       }
 
       curr_steering_angle_deg_ =
-        -180.0 / M_PI * pos2psi(static_cast<double>(raw_pos));
+        -180.0 / (M_PI * pos2psi(static_cast<double>(raw_pos)) + 0.01);
 
       int target_pos = set_dir_deg(target_steering_angle_deg_);
 

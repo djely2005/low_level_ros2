@@ -90,6 +90,12 @@ public:
 
   ~Stm32Node()
   {
+    auto msg = std::make_shared<std_msgs::msg::Int16>();
+    msg->data = 1500;
+    get_command(msg);
+    spi_write(tx_buffer_);
+    spi_write(tx_buffer_);
+    spi_write(tx_buffer_);
     if (spi_fd_ >= 0)
       close(spi_fd_);
   }
