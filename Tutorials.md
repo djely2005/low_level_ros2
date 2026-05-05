@@ -209,4 +209,3 @@ As you saw before, you can't to print a DEBUG log message on your terminal becau
 rclpy.logging().set_logger_level('name_of_the_node', 10)
 ```
 
-Here 10 is for DEBUG Level.
