@@ -10,56 +10,21 @@
 
 using namespace std::chrono_literals;
 
-template <typename T>
-int get_sign(T val)
-{
-    return (T(0) < val) - (val < T(0));
-}
-
-// ── ESC pulse configuration ───────────────────────────────────────────────────
-// The STM32 expects a pulse width in nanoseconds derived from a duty cycle ratio.
-// Formula: pulse_ns = ratio (%) * DUTY_TO_NS_FACTOR * ESC_PERIOD_NS
-//
-// DUTY_TO_NS_FACTOR = 0.00938 converts a percentage-style ratio to a
-// fractional duty cycle (e.g. 8.0 * 0.00938 ≈ 0.075 → 7.5% duty cycle).
-//
-// ESC neutral is ~1500 µs = 7.5% of a 20 ms period, which maps to ratio 8.0.
-// Forward max is ~2000 µs = 10.0% → ratio 10.0.
-// Reverse min is ~1490 µs ≈ 7.7% → ratio 7.7  (just below neutral).
-// Reverse max is ~1300 µs ≈ 6.5% → ratio 6.5.
-
-static constexpr double ESC_PERIOD_NS = 20000.0; // 20 ms PWM period
-static constexpr double DUTY_TO_NS = 0.00938;
-static constexpr double NEUTRAL_RATIO = 8.0;
-static constexpr double FWD_MAX_RATIO = 10.0; // # Play with this 10.0
-static constexpr double REV_IDLE_RATIO = 7.7; // slowest reverse (just below neutral)
-static constexpr double REV_FULL_RATIO = 6.5; // fastest reverse
-static constexpr double CMD_DEADBAND = 0.01;
-
-#include <chrono>
-#include <memory>
-#include <cmath>
-#include <mutex>
-#include <algorithm>
-
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/int16.hpp"
-#include "std_msgs/msg/float32.hpp"
-
-using namespace std::chrono_literals;
-
-// ── Hardware Mapping Constants ──────────────────────────────────────────────
-// Based on your tests:
+// ── ESC Nanosecond Mapping ───────────────────────────────────────────────────
+// These represent the raw pulse widths in nanoseconds.
+// Neutral: 1500ns
 // Forward: 1400 (slow) to 1300 (fast)
 // Reverse: 1600 (slow) to 1800 (fast)
-// Neutral: 1500
 
-// Math: Ratio = ns / (DUTY_TO_NS * ESC_PERIOD_NS)
-static constexpr double RATIO_1300 = 6.93;
-static constexpr double RATIO_1400 = 7.3; // 7.46;
-static constexpr double RATIO_1500 = 8.00;
-static constexpr double RATIO_1600 = 8.53;
-static constexpr double RATIO_1800 = 9.59;
+static constexpr double NS_FWD_FAST = 1300.0;
+static constexpr double NS_FWD_SLOW = 1500.0;
+static constexpr double NS_NEUTRAL  = 1500.0;
+static constexpr double NS_REV_SLOW = 1600.0;
+static constexpr double NS_REV_FAST = 1800.0;
+
+// Conversion factors for the STM32 "Ratio" unit
+static constexpr double ESC_PERIOD_NS = 20000.0; // 20 ms PWM period
+static constexpr double DUTY_TO_NS    = 0.00938;
 
 class CommandSpeedNode : public rclcpp::Node
 {
@@ -79,56 +44,64 @@ public:
         timer_safety_->cancel();
 
         ready_ = true;
-        RCLCPP_INFO(this->get_logger(), "Command Speed Node initialized for custom ESC mapping.");
+        RCLCPP_INFO(this->get_logger(), "Command Speed Node initialized with direct NS mapping.");
     }
 
 private:
+    /**
+     * @brief Converts nanoseconds back into the "Ratio" expected by the firmware.
+     * Formula: Ratio = ns / (DUTY_TO_NS * ESC_PERIOD_NS)
+     */
+    double convert_ns_to_ratio(double ns)
+    {
+        return ns / (DUTY_TO_NS * ESC_PERIOD_NS);
+    }
+
     void cmd_callback(const std_msgs::msg::Float32::SharedPtr msg)
     {
         std::lock_guard<std::mutex> lock(mutex_);
         timer_safety_->cancel();
 
         float cmd = std::clamp(msg->data, -1.0f, 1.0f);
-        // Inside cmd_callback
+        double target_ns;
+
         if (cmd > 0.01f)
         {
-            // FORWARD logic: maps [0, 1] to [1400ns, 1300ns]
-            // Note: As speed increases, ratio decreases
-            double ratio = RATIO_1400 + (double)cmd * (RATIO_1300 - RATIO_1400);
-            publish_pulse(ratio);
+            // FORWARD: maps [0, 1] to [1400ns, 1300ns]
+            target_ns = NS_FWD_SLOW + (double)cmd * (NS_FWD_FAST - NS_FWD_SLOW);
         }
         else if (cmd < -0.01f)
         {
-            // REVERSE logic: maps [0, 1] to [1600ns, 1800ns]
+            // REVERSE: maps [0, 1] to [1600ns, 1800ns]
             double magnitude = std::abs((double)cmd);
-            double ratio = RATIO_1600 + magnitude * (RATIO_1800 - RATIO_1600);
-            publish_pulse(ratio);
+            target_ns = NS_REV_SLOW + magnitude * (NS_REV_FAST - NS_REV_SLOW);
         }
         else
         {
-            publish_pulse(RATIO_1500);
+            target_ns = NS_NEUTRAL;
         }
 
+        publish_pulse(convert_ns_to_ratio(target_ns));
         timer_safety_->reset();
     }
 
     void emergency_stop()
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        publish_pulse(RATIO_1500);
+        publish_pulse(convert_ns_to_ratio(NS_NEUTRAL));
         RCLCPP_WARN(this->get_logger(), "Watchdog triggered: Neutral sent.");
     }
 
     void publish_pulse(double ratio)
     {
-        if (!ready_)
-            return;
+        if (!ready_) return;
 
         auto msg = std_msgs::msg::Int16();
-        // Calculate raw nanoseconds
+        
+        // Final pulse calculation in nanoseconds
         double ns = ratio * DUTY_TO_NS * ESC_PERIOD_NS;
 
-        // Final safety clamp to prevent the "plummet" (out-of-range signals)
+        // Safety clamp based on your specific motor limits
         msg.data = static_cast<int16_t>(std::clamp(ns, 1250.0, 1850.0));
 
         RCLCPP_DEBUG(this->get_logger(), "Pulse: %d ns", msg.data);
@@ -146,12 +119,9 @@ int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<CommandSpeedNode>();
-    try
-    {
+    try {
         rclcpp::spin(node);
-    }
-    catch (const std::exception &e)
-    {
+    } catch (const std::exception &e) {
         RCLCPP_FATAL(node->get_logger(), "Crash: %s", e.what());
     }
     rclcpp::shutdown();
